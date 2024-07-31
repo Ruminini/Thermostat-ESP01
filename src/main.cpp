@@ -1,13 +1,12 @@
+#include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <DHT.h>
+#include <config.h>
 
 #define RELAYPIN 2
 #define DHTPIN 0
 #define DHTTYPE DHT11
-
-const char* ssid = "SSID";
-const char* password = "PASSWORD";
 
 DHT dht(DHTPIN, DHTTYPE);
 float tem;
@@ -22,6 +21,11 @@ IPAddress subnet(255, 255, 0, 0);
 IPAddress primaryDNS(8, 8, 8, 8);
 IPAddress secondaryDNS(8, 8, 4, 4);
 
+void readDht();
+void handleRoot();
+void handleData();
+void handleSet();
+
 void setup() {
   Serial.begin(115200);
   dht.begin();
@@ -34,10 +38,10 @@ void setup() {
   }
   
   Serial.print("Connecting to ");
-  Serial.println(ssid);
+  Serial.println(WIFI_SSID);
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PWD);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -61,69 +65,55 @@ void loop() {
 
 void readDht() {
   if (millis() - lastRead < 5000) return;
-    lastRead = millis();
-    float temperature = dht.readTemperature();
-    float humidity = dht.readHumidity();
-    if (!isnan(temperature)) tem = temperature;
-    if (!isnan(humidity)) hum = humidity;
-    Serial.print("Temperature: " + String(tem) + " Humidity: " + String(hum));
+  Serial.println("lastRead: " + String(lastRead) + " millis()" + String(millis()));
+  lastRead = millis();
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+  if (!isnan(temperature)) tem = temperature;
+  if (!isnan(humidity)) hum = humidity;
+  Serial.println("Temperature: " + String(temperature) + " Humidity: " + String(humidity));
 }
 
 void handleRoot() {
-  String html = "<!DOCTYPE html><html><head><title>ESP-01 Thermostat</title></head><body>";
-  html += "<h1>ESP-01 Thermostat</h1>";
-  html += "<p>Temperature: <span id='temperature'></span>&#8451;</p>";
-  html += "<p>Humidity: <span id='humidity'></span>%</p>";
-  html += "<p>Relay State: <span id='relayState'></span></p>";
-  html += "<button type='submit' onclick='toggleRelay()'>Turn <span id='relayButton'></span></button>";
-  html += "<script>";
-  html += "let relay = 'OFF';";
-  html += "function toggleRelay() {";
-  html += "  fetch('/set?relay=' + (relay == 'ON' ? '1' : '0')).then(fetchData);";
-  html += "}";
-  html += "function fetchData() {";
-  html += "  fetch('/data').then(response => response.json()).then(data => {";
-  html += "    relay = data.relay == 1 ? 'OFF' : 'ON';";
-  html += "    document.getElementById('temperature').innerText = data.temperature;";
-  html += "    document.getElementById('humidity').innerText = data.humidity;";
-  html += "    document.getElementById('relayState').innerText = relay;";
-  html += "    document.getElementById('relayButton').innerText = data.relay == 1 ? 'ON' : 'OFF';";
-  html += "  });";
-  html += "}";
-  html += "setInterval(fetchData, 5000);";
-  html += "</script>";
-  html += "</body></html>";
+  String html = R""""(<!DOCTYPE html><html><head><title>ESP-01 Thermostat</title></head><body>
+  <h1>ESP-01 Thermostat</h1>
+  <p>Temperature: <span id='temperature'></span>&#8451;</p>
+  <p>Humidity: <span id='humidity'></span>%</p>
+  <p>Relay State: <span id='relayState'></span></p>
+  <button type='submit' onclick='toggleRelay()'>Turn <span id='relayButton'></span></button>
+  <script>
+  let relay = 'OFF';
+  function toggleRelay() {
+    fetch('/set?relay=' + (relay == 'ON' ? '1' : '0')).then(fetchData);
+  }
+  function fetchData() {
+    fetch('/data').then(response => response.json()).then(data => {
+      relay = data.relay == 1 ? 'OFF' : 'ON';
+      document.getElementById('temperature').innerText = data.temperature;
+      document.getElementById('humidity').innerText = data.humidity;
+      document.getElementById('relayState').innerText = relay;
+      document.getElementById('relayButton').innerText = data.relay == 1 ? 'ON' : 'OFF';
+    });
+  }
+  setInterval(fetchData, 5000);
+  </script>
+  </body></html>)"""";
   server.send(200, "text/html", html);
 }
 
 void handleData() {
-
   int relay = digitalRead(RELAYPIN);
-
-  Serial.print("Temperature: ");
-  Serial.println(tem);
-  Serial.print("Humidity: ");
-  Serial.println(hum);
-  Serial.print("Relay: ");
-  Serial.println(relay);
-
-  String json = "{";
-  json += "\"temperature\":";
-  json += tem;
-  json += ",";
-  json += "\"humidity\":";
-  json += hum;
-  json += ",";
-  json += "\"relay\":";
-  json += relay;
-  json += "}";
-
+  String json = "{\"temperature\":" + String(tem) + " , \"humidity\":" + String(hum) + " , \"relay\":" + String(relay) + "}";
+  Serial.println(json);
   server.send(200, "application/json", json);
 }
 
 void handleSet() {
-  Serial.println(server.arg("relay"));
-  int relay = server.arg("relay").toInt();
-  digitalWrite(RELAYPIN, relay);
-  server.send(200, "text/plain", String(relay));
+  if (server.hasArg("relay")) {
+    int relay = server.arg("relay").toInt();
+    if (relay == 0 || relay == 1) {
+      digitalWrite(RELAYPIN, relay);
+    } else server.send(400, "text/plain", "Relay must be 0 or 1");
+  }
+  server.send(200, "text/plain", "OK");
 }
