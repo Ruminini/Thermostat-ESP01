@@ -11,7 +11,7 @@
 DHT dht(DHTPIN, DHTTYPE);
 float tem;
 float hum;
-int lastRead;
+unsigned long int lastRead;
 
 ESP8266WebServer server(80);
 
@@ -65,7 +65,7 @@ void loop() {
   regulateTemp();
 }
 
-int readSleep = 2500;
+unsigned int readSleep = 2500;
 void readDht() {
   if (millis() - lastRead < readSleep) return;
   lastRead = millis();
@@ -76,14 +76,17 @@ void readDht() {
   Serial.println("Temperature: " + String(temperature) + " Humidity: " + String(humidity));
 }
 
-int lastUpdate;
-int targetTemp = 20;
-int hysteresis = 2;
-int updatePeriod = 15000;
+unsigned long lastUpdate;
+unsigned int targetTemp = 20;
+unsigned int hysteresis = 2;
+unsigned int updatePeriod = 15000;
+int forceState = -1;
 void regulateTemp() {
   if (millis() - lastUpdate < updatePeriod) return;
   lastUpdate = millis();
-  if (tem < targetTemp - hysteresis/2) {
+  if (forceState != -1) {
+    digitalWrite(RELAYPIN, 1 - forceState);
+  } else  if (tem < targetTemp - hysteresis/2) {
     digitalWrite(RELAYPIN, 0);
   } else if (tem > targetTemp + hysteresis/2) {
     digitalWrite(RELAYPIN, 1);
@@ -102,55 +105,60 @@ void handleRoot() {
 	<p>Temperature: <span id='temperature'></span>&#8451;</p>
 	<p>Humidity: <span id='humidity'></span>%</p>
 	<p>Relay State: <span id='relayState'></span></p>
-	<button type='submit' onclick='toggleRelay()'>Turn <span id='relayButton'></span></button>
+	<label for="force">Force</label>
+	<input onclick='toggleForce()' type="checkbox" id="force">
+	<button id="relay" onclick='toggleRelay()'>On</button>
 	<label for="targetTemp">Target Temperature: <span id="targetTempValue">20</span></label>
-	<input type="range" id="targetTemp" min="5" max="30" step="0.5" value="20" oninput="updateValue('targetTemp')">
+	<input type="range" id="targetTemp" min="15" max="30" step="1" value="20" oninput="updateValue('targetTemp')">
 	<label for="hysteresis">Hysteresis: <span id="hysteresisValue">2</span></label>
 	<input type="range" id="hysteresis" min="0" max="10" step="1" value="2" oninput="updateValue('hysteresis')">
 	<label for="updatePeriod">Update Period: <span id="updatePeriodValue">300</span>sec</label>
 	<input type="range" id="updatePeriod" min="15" max="600" step="15" value="300"  oninput="updateValue('updatePeriod')">
-	<button type='submit' onclick='satValues()'>Save</button>
 	<script>
+		function toggleForce() {
+			const force = document.getElementById('force').checked;
+			document.getElementById('relay').disabled = !force;
+			document.getElementById('targetTemp').disabled = force;
+			document.getElementById('hysteresis').disabled = force;
+			document.getElementById('updatePeriod').disabled = force;
+			toggleRelay(force ? relay == 'ON' ? 1 : 0 : -1);
+		}
 		let relay = 'OFF';
 		let updateForm = true;
-		function toggleRelay() {
-			fetch('/set?relay=' + (relay == 'ON' ? '1' : '0')).then(fetchData);
+		function toggleRelay(state = relay == 'ON' ? 0 : 1) {
+			fetch('/set?relay=' + state).then(fetchData);
 		}
+		let debounceTimer;
 		function updateValue(id) {
 				const element = document.getElementById(id);
 				const valueElement = document.getElementById(id + 'Value');
 				valueElement.textContent = element.value;
+				clearTimeout(debounceTimer);
+				debounceTimer = setTimeout(() => {
+					fetch('/set?' + id + '=' + element.value);
+				}, 500);
 		}
 		function fetchData() {
 			fetch('/data').then(response => response.json()).then(data => {
-				relay = data.relay == 1 ? 'OFF' : 'ON';
+				relay = data.relay == 0 ? 'OFF' : 'ON';
 				document.getElementById('temperature').innerText = data.temperature;
 				document.getElementById('humidity').innerText = data.humidity;
 				document.getElementById('relayState').innerText = relay;
-				document.getElementById('relayButton').innerText = data.relay == 1 ? 'ON' : 'OFF';
-				if (updateForm) {
-					updateForm = false;
-					const targetTemp = data.targetTemp;
-					const hysteresis = data.hysteresis;
-					const updatePeriod = data.updatePeriod/1000;
-					document.getElementById('targetTemp').value = targetTemp;
-					document.getElementById('hysteresis').value = hysteresis;
-					document.getElementById('updatePeriod').value = updatePeriod;
-					updateValue('targetTemp');
-					updateValue('hysteresis');
-					updateValue('numberInput');
-				}
+				document.getElementById('relay').innerText = relay;
+				const targetTemp = data.targetTemp;
+				const hysteresis = data.hysteresis;
+				const updatePeriod = data.updatePeriod/1000;
+				document.getElementById('targetTemp').value = targetTemp;
+				document.getElementById('hysteresis').value = hysteresis;
+				document.getElementById('updatePeriod').value = updatePeriod;
+				updateValue('targetTemp');
+				updateValue('hysteresis');
+				updateValue('updatePeriod');
 			});
-		}
-		function satValues() {
-			updateForm = true;
-			const targetTemp = document.getElementById("targetTemp").value;
-			const hysteresis = document.getElementById("hysteresis").value;
-			const updatePeriod = document.getElementById("updatePeriod").value;
-			fetch('/set?targetTemp=' + targetTemp + '&hysteresis=' + hysteresis + '&updatePeriod=' + updatePeriod*1000).then(fetchData);
 		}
 		setInterval(fetchData, 5000);
 		fetchData();
+		toggleForce();
 	</script>
 </body>
 </html>
@@ -159,7 +167,7 @@ void handleRoot() {
 }
 
 void handleData() {
-  int relay = digitalRead(RELAYPIN);
+  int relay = forceState!= -1 ? forceState : 1 - digitalRead(RELAYPIN);
   String json = "{\"temperature\":" + String(tem) +
   " , \"humidity\":" + String(hum) +
   " , \"relay\":" + String(relay) +
@@ -175,17 +183,17 @@ void handleSet() {
   String error;
   if (server.hasArg("relay")) {
     int relay = server.arg("relay").toInt();
-    if (relay == 0 || relay == 1) {
-      digitalWrite(RELAYPIN, relay);
+    if (relay >= -1 && relay <= 1) {
+      forceState = relay;
       Serial.println("Relay state changed to " + String(relay));
-    } else error += "Relay must be 0 or 1\n";
+    } else error += "Relay must be -1(Auto), 0(Off) or 1(On)\n";
   }
   if (server.hasArg("targetTemp")) {
     int nTargetTemp = server.arg("targetTemp").toInt();
-    if (targetTemp >= 5 && targetTemp <= 30) {
+    if (targetTemp >= 15 && targetTemp <= 30) {
       targetTemp = nTargetTemp;
       Serial.println("Target temperature changed to " + String(targetTemp));
-    } else error += "Target temperature must be between 5 and 30\n";
+    } else error += "Target temperature must be between 15 and 30\n";
   }
   if (server.hasArg("hysteresis")) {
     int nHysteresis = server.arg("hysteresis").toInt();
