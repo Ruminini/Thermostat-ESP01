@@ -11,24 +11,30 @@
 </head>
 
 <body>
-	<svg width="400" height="320" viewBox="0 0 100 80">
-		<path d="M11.89,72L15.36,70M21.72,16.29L24.29,19.36M78.28,16.29L75.71,19.36M88.1,72L84.64,70" stroke="#ccc" stroke-width="0.5" stroke-linecap="round" fill="none" /> 
-		<path d="M7.31,60.64L9.25,60.16M6.03,48.46L8.03,48.53M8.15,36.4L10.06,37.02M13.52,25.4L15.18,26.51M21.72,16.29L23,17.83M32.1,9.8L32.92,11.63M43.88,6.43L44.15,8.41M56.12,6.43L55.85,8.41M67.9,9.8L67.08,11.63M78.28,16.29L77,17.83M86.48,25.4L84.82,26.51M91.85,36.4L89.94,37.02M93.97,48.46L91.97,48.53M92.69,60.64L90.75,60.16M88.11,72L86.37,71" stroke="#ccc" stroke-width="0.5" stroke-linecap="round" fill="none" /> 
-		<path id="outerArcBG" d="M 8.43,74  A 48 48 0 1 1 91.57,74" stroke="#ccc" stroke-width="1" stroke-linecap="round" fill="none" />
-		<path id="innerArcBG" d="M 11.89,72  A 44 44 0 1 1 88.11,72" stroke="#ccc" stroke-width="1" stroke-linecap="round" fill="none" />
-		<path id="outerArc" d="M 8.43,74  A 48 48 0 1 1 95.65,35.17" stroke="orange" stroke-width="4" stroke-linecap="round" fill="none" />
-		<path id="innerArc" d="M 11.89,72  A 44 44 0 0 1 6.24,45.40" stroke="teal" stroke-width="2" stroke-linecap="round" fill="none" />
-		<text x="50" y="36" text-anchor="middle" class="xsmall" fill="#777">now</text>
-		<text x="50" y="50" text-anchor="middle"  fill="#777" id="nowTemp">25</text>
-		<text x="50" y="57" text-anchor="middle" class="xsmall" fill="#777">set</text>
-		<text x="50" y="65" text-anchor="middle" class="small" fill="#777" id="setTemp">18</text>
-		<text x="70" y="57" text-anchor="middle" class="xsmall" fill="#ccc">hum</text>
-		<text x="72" y="65" text-anchor="middle" class="xsmall" fill="#ccc"><tspan class="small" id="humidity">60</tspan>%</text>
-		<text x="17" y="70" class="xsmall" fill="#ccc">15</text>
-		<text x="24" y="24" class="xsmall" fill="#ccc">20</text>
-		<text x="76" y="24" text-anchor="end" class="xsmall" fill="#ccc">25</text>
-		<text x="83" y="70" text-anchor="end" class="xsmall" fill="#ccc">30</text>
-		<path id="burner" fill="#ccc" transform="matrix(0.04, 0, 0, 0.04, 25, 55)" d="M 88 249 C 90 251 93 248 92 246 87 233 76 212 88 185 109 139 121 115 121 115 121 115 128 143 146 167 163 191 172 221 157 245 156 248 158 251 160 249 179 239 200 220 203 181 203 170 202 153 195 132 187 106 176 94 170 89 169 87 166 88 166 91 168 119 157 126 151 110 149 104 147 92 147 79 147 56 141 33 126 14 122 9 118 4 113 0 111 0 108 0 108 2 110 18 108 62 70 115 35 164 48 201 53 212 62 231 75 242 88 249 Z M 88 249"/>
+	<svg width="400" height="320" viewBox="0 0 100 80" fill="#ccc">
+		<g stroke-linecap="round" fill="none" stroke="#ccc">
+			<path d="M11.89,72L15.36,70M7.31,60.64L9.25,60.16M6.03,48.46L8.03,48.53M8.15,36.4L10.06,37.02M13.52,25.4L15.18,26.51M21.72,16.29L24.29,19.36M32.1,9.8L32.92,11.63M43.88,6.43L44.15,8.41M56.12,6.43L55.85,8.41M67.9,9.8L67.08,11.63M78.28,16.29L75.71,19.36M86.48,25.4L84.82,26.51M91.85,36.4L89.94,37.02M93.97,48.46L91.97,48.53M92.69,60.64L90.75,60.16M88.11,72L84.64,70" stroke-width="0.5"/> 
+			<path d="M8.43,74A48 48 0 1 1 91.57,74M11.89,72A44 44 0 1 1 88.11,72" stroke-width="1"/>
+			<path id="outerArc" d="M 8.43,74  A 48 48 0 1 1 95.65,35.17" stroke="orange" stroke-width="4"/>
+			<path id="innerArc" d="M 11.89,72  A 44 44 0 0 1 6.24,45.40" stroke="teal" stroke-width="2"/>
+		</g>
+		<g font-size="3pt">
+			<g text-anchor="middle">
+				<g fill="#777">
+					<text x="50" y="36">now</text>
+					<text x="50" y="50" id="nowTemp" font-size="12pt">25</text>
+					<text x="50" y="57">set</text>
+					<text x="50" y="65" font-size="6pt" id="setTemp">18</text>
+				</g>
+				<text x="70" y="57">hum</text>
+				<text x="72" y="65"><tspan font-size="6pt" id="humidity">60</tspan>%</text>
+			</g>
+			<text x="17" y="70">15</text>
+			<text x="24" y="24">20</text>
+			<text x="71.5" y="24">25</text>
+			<text x="79" y="70">30</text>
+		</g>
+		<path id="burner" transform="matrix(0.04 0 0 0.04 25 55)" d="M 88 249 C 90 251 93 248 92 246 87 233 76 212 88 185 109 139 121 115 121 115 121 115 128 143 146 167 163 191 172 221 157 245 156 248 158 251 160 249 179 239 200 220 203 181 203 170 202 153 195 132 187 106 176 94 170 89 169 87 166 88 166 91 168 119 157 126 151 110 149 104 147 92 147 79 147 56 141 33 126 14 122 9 118 4 113 0 111 0 108 0 108 2 110 18 108 62 70 115 35 164 48 201 53 212 62 231 75 242 88 249 Z M 88 249"/>
 	</svg>
 </body>
 
