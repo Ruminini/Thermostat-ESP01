@@ -97,7 +97,7 @@ void readDht() {
 
 unsigned long lastUpdate;
 unsigned int targetTemp = 20;
-unsigned int hysteresis = 2;
+unsigned int hysteresis = 1;
 unsigned int updatePeriod = 15000;
 int forceState = -1;
 void regulateTemp() {
@@ -141,7 +141,7 @@ void handleRoot(AsyncWebServerRequest *request) {
 }
 
 void handleData(AsyncWebServerRequest *request) {
-  int relay = forceState!= -1 ? forceState : 1 - digitalRead(RELAYPIN);
+  int relay = 1 - digitalRead(RELAYPIN);
   String json = "{\"temperature\":" + String(tem) +
   " , \"humidity\":" + String(hum) +
   " , \"relay\":" + String(relay) +

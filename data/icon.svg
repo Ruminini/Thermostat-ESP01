@@ -1,0 +1,6 @@
+<svg viewBox="0 0 100 100"  xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" fill="none">
+  <circle cx="50" cy="50" r="50" fill="white" ></circle>
+  <path d="M 13 73 A 43.5 43.5 0 1 1 87 73" stroke="orange" stroke-width="10"/>
+  <path d="M 20 69 A 35.5 35.5 0 1 1 80 69" stroke="teal" stroke-width="3"/>
+  <text style="fill: #000; font-family: Arial; font-size: 55px;" x="19" y="69">01</text>
+</svg>
