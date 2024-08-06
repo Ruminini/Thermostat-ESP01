@@ -36,6 +36,32 @@
 		</g>
 		<path id="burner" transform="matrix(0.04 0 0 0.04 25 55)" d="M 88 249 C 90 251 93 248 92 246 87 233 76 212 88 185 109 139 121 115 121 115 121 115 128 143 146 167 163 191 172 221 157 245 156 248 158 251 160 249 179 239 200 220 203 181 203 170 202 153 195 132 187 106 176 94 170 89 169 87 166 88 166 91 168 119 157 126 151 110 149 104 147 92 147 79 147 56 141 33 126 14 122 9 118 4 113 0 111 0 108 0 108 2 110 18 108 62 70 115 35 164 48 201 53 212 62 231 75 242 88 249 Z M 88 249"/>
 	</svg>
+	<h3>modes</h3>
+	<div id="mainModes" class="modes">
+		<a id="fixed" class="mode ">fixed</a>
+		<a id="schedule" class="mode">schedule</a>
+	</div>
+	<section id="fixedConfig">
+		<div id="fixedModes" class="modes">
+			<a id="off" class="mode">OFF</a>
+			<a id="on" class="mode">ON</a>
+			<a id="custom" class="mode selected">Temp</a>
+		</div>
+		<div id="tempSelector">
+			<a id="sub" class="button">−</a>
+			<div class="container">
+				<input type="number" min="15" max="30" value="25" id="tempInput" />
+			</div>
+			<a id="add" class="button">+</a>
+		</div>
+	</section>
+	<section id="scheduleConfig">
+		<div id="scheduleModes" class="modes">
+			<a id="single" class="mode">single</a>
+			<a id="weekly" class="mode selected">weekly</a>
+			<a id="daily" class="mode">daily</a>
+		</div>
+	</section>
 </body>
 
 </html>

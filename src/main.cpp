@@ -101,26 +101,32 @@ unsigned int hysteresis = 1;
 unsigned int updatePeriod = 15000;
 int forceState = -1;
 void regulateTemp() {
-  if (millis() - lastUpdate < updatePeriod) return;
-  lastUpdate = millis();
-  if (forceState == 0 || forceState == 1) {
-    digitalWrite(RELAYPIN, 1 - forceState);
-    return;
-  } else if (forceState > 1){
+  int newState = 1 - digitalRead(RELAYPIN);
+  if (forceState > 1){
     targetTemp = forceState;
   } else updateTargetTemp();
-  if (targetTemp == 0 || tem > targetTemp + (float)hysteresis/2) {
-    digitalWrite(RELAYPIN, 1);
+  if (forceState == 0 || forceState == 1) {
+    newState = forceState;
+  } else if (targetTemp == 0 || tem > targetTemp + (float)hysteresis/2) {
+    newState = 0;
   } else if (tem < targetTemp - (float)hysteresis/2) {
-    digitalWrite(RELAYPIN, 0);
+    newState = 1;
   }
-  serializeJsonPretty(schedule["7"], Serial);
+  if (newState == 1 - digitalRead(RELAYPIN)) return;
+  if (newState == 1 && millis() - lastUpdate < updatePeriod) return;
+  lastUpdate = millis();
+  digitalWrite(RELAYPIN, 1 - newState);
 }
 
+JsonObject lastSchedule;
 void updateTargetTemp() {
   time_t now = time(nullptr);
   struct tm * timeinfo;
   timeinfo = localtime(&now);
+  if (!lastSchedule.isNull() && compareTimeRange(timeinfo, lastSchedule) == 0) {
+    targetTemp = (int)lastSchedule["temperature"];
+    return;
+  }
   JsonArray temps = schedule[String(timeinfo->tm_wday+1)];
   for (JsonObject item: temps) {
     int inRange = compareTimeRange(timeinfo, item);
@@ -128,11 +134,17 @@ void updateTargetTemp() {
     Serial.println((int)item["temperature"]);
     if (inRange == 0) {
       targetTemp = item["temperature"];
+      lastSchedule = item;
       return;
     } else if (inRange == -1) {
+      lastSchedule = item;
       break;
     }
   }
+  lastSchedule["end_time"] = lastSchedule["start_time"];
+  lastSchedule["start_time"][0] = timeinfo->tm_hour;
+  lastSchedule["start_time"][1] = timeinfo->tm_min;
+  lastSchedule["temperature"] = 0;
   targetTemp = 0;
 }
 
@@ -145,6 +157,7 @@ void handleData(AsyncWebServerRequest *request) {
   String json = "{\"temperature\":" + String(tem) +
   " , \"humidity\":" + String(hum) +
   " , \"relay\":" + String(relay) +
+  " , \"forceState\":" + String(forceState) +
   " , \"targetTemp\":" + String(targetTemp) +
   " , \"hysteresis\":" + String(hysteresis) +
   " , \"updatePeriod\":" + String(updatePeriod) +
@@ -203,6 +216,7 @@ void handleSchedule(AsyncWebServerRequest *request, uint8_t *data, size_t len, s
       return;
     }
     schedule.clear();
+    lastSchedule.clear();
     for (int day = 1; day <= 7; day++) {
       schedule[(String)day] = json["schedule"];
     }
@@ -218,6 +232,7 @@ void handleSchedule(AsyncWebServerRequest *request, uint8_t *data, size_t len, s
       return;
     }
     schedule.clear();
+    lastSchedule.clear();
     schedule["1"] = json["weekends"];
     schedule["7"] = json["weekends"];
     for (int day = 2; day <= 6; day++) {
@@ -234,6 +249,7 @@ void handleSchedule(AsyncWebServerRequest *request, uint8_t *data, size_t len, s
       }
     }
     schedule.clear();
+    lastSchedule.clear();
     for (int day = 1; day <= 7; day++) {
       schedule[(String)day] = json[(String)day];
     }
