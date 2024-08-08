@@ -1,85 +1,183 @@
+html {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scrollbar-gutter: stable both-edges;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-	display: flex;
-	flex-direction: column;
-	padding-top: 15%;
-	align-items: center;
-	height: 100vh;
-	background-color: #f0f0f0;
-	color: #777;
-	font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  padding-top: 10vh;
+  align-items: center;
+  height: 100vh;
+  background-color: #f0f0f0;
+  color: #777;
+  font-family: Arial, sans-serif;
+  max-width: 1200px;
+}
+
+#gauge {
+  max-width: 90vw;
 }
 
 .modes {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	margin: 10px;
-	gap: 10px;
-	padding: 4px;
-	border-radius: 14px;
-	background: linear-gradient(145deg, #d8d8d8, #fff);
-	box-shadow:  5px 5px 10px #ccc,
-             -5px -5px 10px #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px;
+  gap: 10px;
+  padding: 4px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #d8d8d8, #fff);
+  box-shadow: 5px 5px 10px #ccc, -5px -5px 10px #fff;
 }
 
 .mode {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	padding: 10px;
-	cursor: pointer;
-	border-radius: 10px;
-	text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 10px;
+  text-align: center;
 }
 
 .selected {
-	background: #fff;
+  background: #fff;
 }
 
-#tempSelector {
-	display: flex;
-	gap: 10px;
-	align-items: center;
-	padding: 10px;
+.tempSelector {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .button {
-	cursor: pointer;
-	font-size: x-large;
+  cursor: pointer;
+  font-size: 16pt;
+  padding: 5px;
+  height: 30px;
+  width: 20px;
+}
+
+.button:active {
+  font-size: 15pt;
+  background: linear-gradient(145deg, #d8d8d8, #ffffff);
 }
 
 .container {
-	width: 50px;
-	height: 30px;
-	border-radius: 10px;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background: #ededed;
-	box-shadow: inset 3px 3px 6px #c9c9c9,
-	inset -3px -3px 6px #ffffff;
-	overflow: hidden;
+  width: 50px;
+  height: 30px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ededed;
+  box-shadow: inset 3px 3px 6px #c9c9c9, inset -3px -3px 6px #ffffff;
+  overflow: hidden;
 }
 
-#tempInput {
-	text-align: center;
-	background-color: transparent;
-	border: none;
-	outline: none;
-	font-size: x-large;
-	width: 70px;
-	margin-left: 15px;
-	color: #777;
+.tempInput {
+  text-align: center;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  font-size: 12pt;
+  width: 70px;
+  margin-left: 15px;
+  color: #777;
 }
 
 section {
-	display: none;
-	flex-direction: column;
-	align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scheduleLine {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 10px;
+}
+
+.time {
+  height: 30px;
+  padding: 5px;
+  text-align: center;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  font-size: 11pt;
+  width: 7em;
+  font-family: Arial, sans-serif;
+  color: #777;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ededed;
+  box-shadow: inset 3px 3px 6px #c9c9c9, inset -3px -3px 6px #ffffff;
+}
+
+button {
+  box-sizing: border-box;
+  height: 30px;
+  text-align: center;
+  padding: 0 10px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 12pt;
+  color: #777;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #ffffff, #d8d8d8);
+}
+
+button:active {
+  background: linear-gradient(145deg, #d8d8d8, #ffffff);
+}
+
+.schedule {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 10px 0;
+  background: #f0f0f0;
+  box-shadow: 5px 5px 10px #cccccc, -5px -5px 10px #ffffff;
+}
+
+#schedules {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 10px 0 50px;
+}
+
+.scheduleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 0 10px;
+}
+
+[hidden] {
+  display: none;
 }

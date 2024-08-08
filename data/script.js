@@ -10,20 +10,26 @@ function getArc(radius, percentage) {
 function getCoords(rad, deg) {
   const x = rad * Math.cos((deg * Math.PI) / 180) + 50;
   const y = -rad * Math.sin((deg * Math.PI) / 180) + 50;
-  return `${Math.round(x*100)/100},${Math.round(y*100)/100}`;
+  return `${Math.round(x * 100) / 100},${Math.round(y * 100) / 100}`;
 }
 
 function updateNow(temp) {
   const outerArc = document.getElementById("outerArc");
   const nowTemp = document.getElementById("nowTemp");
-  outerArc.setAttribute("d", getArc(outerRad, (Math.max(0, temp - 15) / 15) * 100));
+  outerArc.setAttribute(
+    "d",
+    getArc(outerRad, (Math.max(0, temp - 15) / 15) * 100)
+  );
   nowTemp.textContent = temp;
 }
 function updateSet(temp) {
   const innerArc = document.getElementById("innerArc");
   const setTemp = document.getElementById("setTemp");
-  const custom = document.getElementById("tempInput")
-  innerArc.setAttribute("d", getArc(innerRad, (Math.max(0, temp - 15) / 15) * 100));
+  const custom = document.getElementById("tempInput");
+  innerArc.setAttribute(
+    "d",
+    getArc(innerRad, (Math.max(0, temp - 15) / 15) * 100)
+  );
   setTemp.textContent = temp;
   custom.value = temp;
 }
@@ -38,7 +44,6 @@ function updateForce(forceState) {
     innerArc.setAttribute("d", getArc(innerRad, 100));
     setTemp.textContent = "ON";
   }
-
 }
 
 function fetchData() {
@@ -50,43 +55,77 @@ function fetchData() {
       updateNow(data.temperature);
       updateSet(data.targetTemp);
       updateForce(data.forceState);
-			burner.setAttribute("fill", data.relay == 1 ? "red" : "#ccc");
-			humidity.textContent = data.humidity;
+      burner.setAttribute("fill", data.relay == 1 ? "red" : "#ccc");
+      humidity.textContent = data.humidity;
     })
     .catch(() => console.error("Error reaching server."));
 }
 setInterval(fetchData, 2500);
 fetchData();
 
+const fixedTempSelector = newTempSelector();
+const fixedTempInput = fixedTempSelector.getElementsByClassName("tempInput")[0];
+document.getElementById("fixedConfig").appendChild(fixedTempSelector);
+fixedTempSelector
+  .getElementsByClassName("sub")[0]
+  .addEventListener("click", () => {
+    fetch("/set?force=" + fixedTempInput.value, { method: "POST" });
+  });
+fixedTempSelector
+  .getElementsByClassName("add")[0]
+  .addEventListener("click", () => {
+    fetch("/set?force=" + fixedTempInput.value, { method: "POST" });
+  });
+let timeoutId;
+fixedTempInput.addEventListener("input", (event) => {
+  const inputValue = event.target.value;
+  let nValue = parseInt(inputValue);
+  if (inputValue.length > 2) {
+    nValue = parseInt(inputValue.slice(0, 2));
+    event.target.value = nValue;
+  }
+  clearTimeout(timeoutId);
+  timeoutId = setTimeout(() => {
+    nValue = Math.min(30, Math.max(15, nValue));
+    event.target.value = nValue;
+    fetch("/set?force=" + nValue, { method: "POST" });
+  }, 1500);
+});
 
 for (const mode of document.getElementsByClassName("modes")) {
   for (const option of mode.children) {
     option.addEventListener("click", () => {
       for (const otherOption of mode.children) {
-          otherOption.classList.remove("selected");
+        otherOption.classList.remove("selected");
       }
       option.classList.add("selected");
       if (mode.id == "mainModes") {
-        document.getElementById("fixedConfig").style.display = option.id == "fixed" ? "flex" : "none";
-        document.getElementById("scheduleConfig").style.display = option.id == "schedule" ? "flex" : "none";
+        document.getElementById("fixedConfig").hidden = option.id != "fixed";
+        document.getElementById("scheduleConfig").hidden =
+          option.id != "schedule";
       } else if (mode.id == "fixedModes") {
-        document.getElementById("tempSelector").style.display = option.id == "custom" ? "flex" : "none";
+        document
+          .getElementById("fixedConfig")
+          .getElementsByClassName("tempSelector")[0].hidden =
+          option.id != "custom";
       }
     });
   }
 }
 
 document.getElementById("off").addEventListener("click", () => {
-  fetch("/set?force=0",{method: 'POST'});
+  fetch("/set?force=0", { method: "POST" });
 });
 document.getElementById("on").addEventListener("click", () => {
-  fetch("/set?force=1",{method: 'POST'});
+  fetch("/set?force=1", { method: "POST" });
 });
 document.getElementById("custom").addEventListener("click", () => {
-  fetch("/set?force="+document.getElementById("tempInput").value,{method: 'POST'});
+  fetch("/set?force=" + fixedTempInput.value, {
+    method: "POST",
+  });
 });
 document.getElementById("schedule").addEventListener("click", () => {
-  fetch("/set?force=-1",{method: 'POST'});
+  fetch("/set?force=-1", { method: "POST" });
 });
 document.getElementById("fixed").addEventListener("click", () => {
   for (const item of document.getElementById("fixedModes").children) {
@@ -96,32 +135,114 @@ document.getElementById("fixed").addEventListener("click", () => {
   }
 });
 
-document.getElementById("add").addEventListener("click", () => {
-  const input = document.getElementById("tempInput");
-  const temp = Math.min(30, Math.max(15, parseInt(input.value) + 1 ||0))
-  input.value = temp;
-  fetch("/set?force="+temp,{method: 'POST'});
+function newTempSelector() {
+  const newTempSelector = document.createElement("div");
+  newTempSelector.className = "tempSelector";
+  newTempSelector.innerHTML = `
+    <button class="sub button">−</button>
+    <div class="container">
+      <input type="number" min="15" max="30" class="tempInput"/>
+    </div>
+    <button class="add button">+</button>
+  `;
+  const newTempInput = newTempSelector.getElementsByClassName("tempInput")[0];
+  newTempSelector
+    .getElementsByClassName("sub")[0]
+    .addEventListener("click", () => {
+      newTempInput.value = Math.min(
+        30,
+        Math.max(15, parseInt(newTempInput.value) - 1 || 0)
+      );
+    });
+  newTempSelector
+    .getElementsByClassName("add")[0]
+    .addEventListener("click", () => {
+      newTempInput.value = Math.min(
+        30,
+        Math.max(15, parseInt(newTempInput.value) + 1 || 0)
+      );
+    });
+  return newTempSelector;
+}
+
+function createScheduleLine(start, end, temp) {
+  const line = document.createElement("div");
+  line.className = "scheduleLine";
+  line.innerHTML = `
+						<input class="time" type="time" name="start">
+						<input class="time" type="time" name="end">
+            `;
+  line.appendChild(newTempSelector());
+  return line;
+}
+
+function createSchedules() {
+  const schedules = document.getElementById("schedules");
+  const days = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
+  for (let i = 0; i < 7; i++) {
+    const scheduleItem = document.createElement("li");
+    scheduleItem.className = "schedule";
+    scheduleItem.innerHTML = `
+      <div class="scheduleHeader">
+        <h3>${days[i]}</h3>
+        <button class="addline">+ add line</button>
+      </div>
+      <ol class="scheduleList">
+      </ol>
+    `;
+    schedules.appendChild(scheduleItem);
+    const scheduleList = scheduleItem.getElementsByClassName("scheduleList")[0];
+    for (let j = 0; j < 3; j++) {
+      scheduleList.appendChild(createScheduleLine());
+    }
+    const addline = scheduleItem.getElementsByClassName("addline")[0];
+    addline.addEventListener("click", () => {
+      scheduleList.appendChild(createScheduleLine());
+    });
+  }
+}
+createSchedules();
+
+document.getElementById("single").addEventListener("click", () => {
+  for (const scheduleDay of document.getElementsByClassName("schedule")) {
+    scheduleDay.hidden = true;
+  }
+  document
+    .getElementsByClassName("schedule")[1]
+    .getElementsByTagName("h3")[0].innerText = "everyday";
+  document.getElementsByClassName("schedule")[1].hidden = false;
 });
 
-document.getElementById("sub").addEventListener("click", () => {
-  const input = document.getElementById("tempInput");
-  const temp = Math.min(30, Math.max(15, parseInt(input.value) - 1 ||0))
-  input.value = temp;
-  fetch("/set?force="+temp,{method: 'POST'});
+document.getElementById("weekly").addEventListener("click", () => {
+  for (const scheduleDay of document.getElementsByClassName("schedule")) {
+    scheduleDay.hidden = true;
+  }
+  document
+    .getElementsByClassName("schedule")[0]
+    .getElementsByTagName("h3")[0].innerText = "weekends";
+  document
+    .getElementsByClassName("schedule")[1]
+    .getElementsByTagName("h3")[0].innerText = "weekdays";
+  document.getElementsByClassName("schedule")[0].hidden = false;
+  document.getElementsByClassName("schedule")[1].hidden = false;
 });
 
-let timeoutId;
-document.getElementById("tempInput").addEventListener('input', (event) => {
-  const inputValue = event.target.value;
-  let nValue = parseInt(inputValue);
-  if (inputValue.length > 2) {
-    nValue = parseInt(inputValue.slice(0, 2));
-    event.target.value = nValue;
-  } 
-  clearTimeout(timeoutId);
-  timeoutId = setTimeout(() => {
-    nValue = Math.min(30, Math.max(15, nValue));
-    event.target.value = nValue;
-    fetch("/set?force="+nValue,{method: 'POST'});
-  }, 1500)
+document.getElementById("daily").addEventListener("click", () => {
+  for (const scheduleDay of document.getElementsByClassName("schedule")) {
+    scheduleDay.hidden = false;
+  }
+  document
+    .getElementsByClassName("schedule")[0]
+    .getElementsByTagName("h3")[0].innerText = "sunday";
+  document
+    .getElementsByClassName("schedule")[1]
+    .getElementsByTagName("h3")[0].innerText = "monday";
 });
