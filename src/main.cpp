@@ -30,11 +30,12 @@ void handleRoot(AsyncWebServerRequest *request);
 void handleData(AsyncWebServerRequest *request);
 void handleSet(AsyncWebServerRequest *request);
 void handleSchedule(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total);
+void handleGetSchedule(AsyncWebServerRequest *request);
 bool validateSchedule(JsonArray schedule);
 bool validateTime(JsonArray time);
 int compareTime(int hour1, int minute1, int hour2, int minute2);
 int compareTime(JsonArray time1, JsonArray time2);
-int compareTimeRange(tm *now, JsonObject range);
+int compareTimeRange(tm *now, JsonDocument range);
 void updateTargetTemp();
 
 void setup() {
@@ -68,9 +69,11 @@ void setup() {
   server.on("/data", HTTP_GET, handleData);
   server.on("/set", HTTP_POST, handleSet);
   server.on("/schedule", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL, handleSchedule);
+  server.on("/schedule", HTTP_GET, handleGetSchedule);
 
   server.onNotFound([](AsyncWebServerRequest *request) {
     String url = request->url();
+    Serial.println("GET Not Found:\n" + url);
     request->send(LittleFS, url);
   });
 
@@ -124,7 +127,7 @@ void regulateTemp() {
   digitalWrite(RELAYPIN, 1 - newState);
 }
 
-JsonObject lastSchedule;
+JsonDocument lastSchedule;
 void updateTargetTemp() {
   time_t now = time(nullptr);
   struct tm *timeinfo;
@@ -136,8 +139,7 @@ void updateTargetTemp() {
   JsonArray temps = schedule[String(timeinfo->tm_wday + 1)];
   for (JsonObject item : temps) {
     int inRange = compareTimeRange(timeinfo, item);
-    Serial.println(inRange);
-    Serial.println((int)item["temperature"]);
+    Serial.println(inRange + " " + (int)item["temperature"]);
     if (inRange == 0) {
       targetTemp = item["temperature"];
       lastSchedule = item;
@@ -155,10 +157,12 @@ void updateTargetTemp() {
 }
 
 void handleRoot(AsyncWebServerRequest *request) {
+  Serial.println("GET Root");
   request->send(LittleFS, "/index.html", "text/html");
 }
 
 void handleData(AsyncWebServerRequest *request) {
+  Serial.println("GET Data");
   int relay = 1 - digitalRead(RELAYPIN);
   String json = "{\"temperature\":" + String(tem) +
                 " , \"humidity\":" + String(hum) +
@@ -172,6 +176,10 @@ void handleData(AsyncWebServerRequest *request) {
 }
 
 void handleSet(AsyncWebServerRequest *request) {
+  Serial.println("POST Set:");
+  for (uint i = 0; i < request->args(); i++) {
+    Serial.println(request->argName(i) + ": " + request->arg(i));
+  }
   String error;
   String ok;
   if (request->hasArg("force")) {
@@ -213,6 +221,7 @@ void handleSchedule(AsyncWebServerRequest *request, uint8_t *data, size_t len, s
   if (index + len != total)
     return;
   JsonDocument json;
+  Serial.println("POST Schedule:\n" + jsonData);
   DeserializationError error = deserializeJson(json, jsonData);
   jsonData = "";
   if (error) {
@@ -318,7 +327,7 @@ int compareTime(JsonArray time1, JsonArray time2) {
   return compareTime(time1[0], time1[1], time2[0], time2[1]);
 }
 
-int compareTimeRange(tm *now, JsonObject range) {
+int compareTimeRange(tm *now, JsonDocument range) {
   JsonArray start = range["start_time"];
   JsonArray end = range["end_time"];
   if (compareTime(now->tm_hour, now->tm_min, end[0], end[1]) == 1)
@@ -326,4 +335,11 @@ int compareTimeRange(tm *now, JsonObject range) {
   if (compareTime(now->tm_hour, now->tm_min, start[0], start[1]) == -1)
     return -1;
   return 0;
+}
+
+void handleGetSchedule(AsyncWebServerRequest *request) {
+  Serial.println("GET Schedule");
+  String response;
+  serializeJson(schedule,response);
+  request->send(200, "text/json", response);
 }

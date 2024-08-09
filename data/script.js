@@ -93,6 +93,7 @@ fixedTempInput.addEventListener("input", (event) => {
 });
 
 for (const mode of document.getElementsByClassName("modes")) {
+  if (mode.id == "scheduleActions") continue;
   for (const option of mode.children) {
     option.addEventListener("click", () => {
       for (const otherOption of mode.children) {
@@ -135,13 +136,13 @@ document.getElementById("fixed").addEventListener("click", () => {
   }
 });
 
-function newTempSelector() {
+function newTempSelector(temp) {
   const newTempSelector = document.createElement("div");
   newTempSelector.className = "tempSelector";
   newTempSelector.innerHTML = `
     <button class="sub button">−</button>
     <div class="container">
-      <input type="number" min="15" max="30" class="tempInput"/>
+      <input type="number" min="15" max="30" value="${temp}" class="tempInput"/>
     </div>
     <button class="add button">+</button>
   `;
@@ -169,10 +170,10 @@ function createScheduleLine(start, end, temp) {
   const line = document.createElement("div");
   line.className = "scheduleLine";
   line.innerHTML = `
-						<input class="time" type="time" name="start">
-						<input class="time" type="time" name="end">
+						<input class="start time" type="time" name="start" value="${start}">
+						<input class="end time" type="time" name="end" value="${end}">
             `;
-  line.appendChild(newTempSelector());
+  line.appendChild(newTempSelector(temp));
   return line;
 }
 
@@ -193,7 +194,11 @@ function createSchedules() {
     scheduleItem.innerHTML = `
       <div class="scheduleHeader">
         <h3>${days[i]}</h3>
-        <button class="addline">+ add line</button>
+        <button class="addline button">
+        <svg height="20" viewBox="-.5 0 1 4" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke="#777" stroke-width="0.7" d="M0,1L0,1M0,2L0,2M0,3L0,3" />
+        </svg>
+        </button>
       </div>
       <ol class="scheduleList">
       </ol>
@@ -246,3 +251,105 @@ document.getElementById("daily").addEventListener("click", () => {
     .getElementsByClassName("schedule")[1]
     .getElementsByTagName("h3")[0].innerText = "monday";
 });
+
+function invalidTime(first, last) {
+  console.log(first, last);
+  console.log(isNaN(first[0]), isNaN(last[0]));
+  return (
+    first[0] > last[0] ||
+    (first[0] == last[0] && first[1] > last[1]) ||
+    isNaN(first[0]) ||
+    isNaN(last[0])
+  );
+}
+
+function parseScheduleList(scheduleList) {
+  const schedule = [];
+  let prevEnd = [0, 0];
+  for (const line of scheduleList.getElementsByClassName("scheduleLine")) {
+    const start = line
+      .getElementsByClassName("start")[0]
+      .value.split(":")
+      .map((x) => parseInt(x));
+    const end = line
+      .getElementsByClassName("end")[0]
+      .value.split(":")
+      .map((x) => parseInt(x));
+    const temp = parseInt(line.getElementsByClassName("tempInput")[0].value);
+    if (isNaN(start[0]) && isNaN(end[0]) && isNaN(temp)) {
+      continue;
+    } else if (
+      invalidTime(prevEnd, start) ||
+      invalidTime(start, end) ||
+      temp < 15 ||
+      temp > 30 ||
+      isNaN(temp)
+    ) {
+      line.style.boxShadow = "0 0 0 2px orange";
+      setTimeout(() => {
+        line.style.boxShadow = "";
+      }, 1500);
+      throw new Error("Invalid time or temperature");
+    }
+    schedule.push({
+      start_time: start,
+      end_time: end,
+      temperature: temp,
+    });
+  }
+  return schedule;
+}
+
+document.getElementById("save").addEventListener("click", () => {
+  const selectedMode = document
+    .getElementById("scheduleModes")
+    .getElementsByClassName("selected")[0].id;
+  const scheduleLists = document.getElementsByClassName("scheduleList");
+  const completeSchedule = {};
+  try {
+    if (selectedMode == "single") {
+      completeSchedule.schedule = parseScheduleList(scheduleLists[1]);
+    } else if (selectedMode == "weekly") {
+      completeSchedule.weekends = parseScheduleList(scheduleLists[0]);
+      completeSchedule.weekdays = parseScheduleList(scheduleLists[1]);
+    } else if (selectedMode == "daily") {
+      for (let i = 0; i < 7; i++) {
+        completeSchedule[i + 1] = parseScheduleList(scheduleLists[i]);
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    return;
+  }
+  fetch("/schedule/" + selectedMode, {
+    method: "POST",
+    body: JSON.stringify(completeSchedule),
+  });
+});
+
+document.getElementById("discard").addEventListener("click", fetchSchedule);
+
+function fetchSchedule() {
+  fetch("/schedule")
+    .then((response) => response.json())
+    .then((data) => {
+      const scheduleLists = document.getElementsByClassName("scheduleList");
+      for (const [day, newScheduleList] of Object.entries(data)) {
+        console.log(day, newScheduleList)
+        const index = parseInt(day) - 1;
+        scheduleLists[index].innerHTML = "";
+        for (const schedule of newScheduleList) {
+          scheduleLists[index].appendChild(createScheduleLine(timeToString(schedule.start_time), timeToString(schedule.end_time), schedule.temperature));
+        }
+        for (let i = newScheduleList.length; i < 3; i++) {
+          scheduleLists[index].appendChild(createScheduleLine());
+        }
+      }
+    });
+}
+
+fetchSchedule();
+
+function timeToString(time) {
+  return `${time[0].toString().padStart(2, "0")}:${time[1].toString().padStart(2, "0")}`;
+}

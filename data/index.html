@@ -45,24 +45,28 @@
 	</div>
 	<h3>modes</h3>
 	<div id="mainModes" class="modes">
-		<a id="fixed" class="mode ">fixed</a>
-		<a id="schedule" class="mode">schedule</a>
+		<button id="fixed" class="mode ">fixed</button>
+		<button id="schedule" class="mode">schedule</button>
 	</div>
 	<section id="fixedConfig" hidden>
 		<div id="fixedModes" class="modes">
-			<a id="off" class="mode">OFF</a>
-			<a id="on" class="mode">ON</a>
-			<a id="custom" class="mode selected">Temp</a>
+			<button id="off" class="mode">OFF</button>
+			<button id="on" class="mode">ON</button>
+			<button id="custom" class="mode selected">Temp</button>
 		</div>
 	</section>
 	<section id="scheduleConfig" hidden>
 		<div id="scheduleModes" class="modes">
-			<a id="single" class="mode">single</a>
-			<a id="weekly" class="mode">weekly</a>
-			<a id="daily" class="mode selected">daily</a>
+			<button id="single" class="mode">single</button>
+			<button id="weekly" class="mode">weekly</button>
+			<button id="daily" class="mode selected">daily</button>
 		</div>
 		<ol id="schedules">
 		</ol>
+		<div id="scheduleActions" class="modes">
+			<button id="discard" type="submit">discard</button>
+			<button id="save" class="bump" type="submit">save</button>
+		</div>
 	</section>
 </body>
 
