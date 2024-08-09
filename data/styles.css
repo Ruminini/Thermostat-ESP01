@@ -156,7 +156,7 @@ button.selected,
   transform: scale(0.9);
 }
 
-#save {
+.bump {
   background: linear-gradient(145deg, #ffffff, #d8d8d8);
 }
 
@@ -184,9 +184,17 @@ button.selected,
   display: flex;
   justify-content: space-between;
   align-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   width: 100%;
   padding: 0 10px;
+}
+
+.scheduleOptions {
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
 }
 
 [hidden] {

@@ -182,7 +182,7 @@ function createScheduleLine(start, end, temp) {
   line.appendChild(newTempSelector(temp));
   return line;
 }
-
+let listClipboard;
 function createSchedules() {
   const schedules = document.getElementById("schedules");
   const days = [
@@ -200,23 +200,67 @@ function createSchedules() {
     scheduleItem.innerHTML = `
       <div class="scheduleHeader">
         <h3>${days[i]}</h3>
-        <button class="addline button">
-        <svg height="20" viewBox="-.5 0 1 4" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke="#777" stroke-width="0.7" d="M0,1L0,1M0,2L0,2M0,3L0,3" />
-        </svg>
-        </button>
+        <div class="scheduleOptions">
+          <button class="more button">
+            <svg height="20" viewBox=".5 0 3 4" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke="#777" stroke-width="0.4" fill="none" d="M2,1L1,2L2,3" />
+            </svg>
+          </button>
+          <button class="copy bump" hidden>copy</button>
+          <button class="paste bump" hidden>paste</button>
+          <button class="remLine bump" hidden>remove line</button>
+          <button class="addLine bump" hidden>add line</button>
+        </div>
       </div>
       <ol class="scheduleList">
       </ol>
     `;
+    scheduleItem
+      .getElementsByClassName("more")[0]
+      .addEventListener("click", () => {
+        const options = scheduleItem.getElementsByClassName("bump");
+        let hide = !options[0].hidden;
+        for (const option of options) {
+          option.hidden = hide;
+        }
+        scheduleItem.getElementsByTagName("h3")[0].hidden = !hide;
+        scheduleItem
+          .getElementsByTagName("path")[0]
+          .setAttribute("d", !hide ? "M1,1L2,2L1,3" : "M2,1L1,2L2,3");
+      });
     schedules.appendChild(scheduleItem);
     const scheduleList = scheduleItem.getElementsByClassName("scheduleList")[0];
     for (let j = 0; j < 3; j++) {
       scheduleList.appendChild(createScheduleLine());
     }
-    const addline = scheduleItem.getElementsByClassName("addline")[0];
+    const addline = scheduleItem.getElementsByClassName("addLine")[0];
     addline.addEventListener("click", () => {
       scheduleList.appendChild(createScheduleLine());
+    });
+    const remLine = scheduleItem.getElementsByClassName("remLine")[0];
+    remLine.addEventListener("click", () => {
+      scheduleList.removeChild(scheduleList.lastElementChild);
+    });
+    const copy = scheduleItem.getElementsByClassName("copy")[0];
+    copy.addEventListener("click", () => {
+      listClipboard = parseScheduleList(scheduleList);
+      console.log(listClipboard);
+    });
+    const paste = scheduleItem.getElementsByClassName("paste")[0];
+    paste.addEventListener("click", () => {
+      scheduleList.innerHTML = "";
+      for (const line of listClipboard) {
+        scheduleList.appendChild(
+          createScheduleLine(
+            timeToString(line.start_time),
+            timeToString(line.end_time),
+            line.temperature
+          )
+        );
+      }
+      for (let i = listClipboard.length; i < 3; i++) {
+        scheduleList.appendChild(createScheduleLine());
+      }
     });
   }
 }
