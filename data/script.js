@@ -25,7 +25,9 @@ function updateNow(temp) {
 function updateSet(temp) {
   const innerArc = document.getElementById("innerArc");
   const setTemp = document.getElementById("setTemp");
-  const custom = document.getElementById("tempInput");
+  const custom = document
+    .getElementById("fixedConfig")
+    .getElementsByClassName("tempSelector")[0];
   innerArc.setAttribute(
     "d",
     getArc(innerRad, (Math.max(0, temp - 15) / 15) * 100)
@@ -142,7 +144,9 @@ function newTempSelector(temp) {
   newTempSelector.innerHTML = `
     <button class="sub button">−</button>
     <div class="container">
-      <input type="number" min="15" max="30" value="${temp}" class="tempInput"/>
+      <input type="number" min="15" max="30" ${
+        temp ? `value="${temp}"` : ""
+      } class="tempInput"/>
     </div>
     <button class="add button">+</button>
   `;
@@ -170,8 +174,10 @@ function createScheduleLine(start, end, temp) {
   const line = document.createElement("div");
   line.className = "scheduleLine";
   line.innerHTML = `
-						<input class="start time" type="time" name="start" value="${start}">
-						<input class="end time" type="time" name="end" value="${end}">
+						<input class="start time" type="time" name="start" ${
+              start ? `value="${start}"` : ""
+            }>
+						<input class="end time" type="time" name="end" ${end ? `value="${end}"` : ""}>
             `;
   line.appendChild(newTempSelector(temp));
   return line;
@@ -296,6 +302,7 @@ function parseScheduleList(scheduleList) {
       end_time: end,
       temperature: temp,
     });
+    prevEnd = end;
   }
   return schedule;
 }
@@ -325,6 +332,7 @@ document.getElementById("save").addEventListener("click", () => {
     method: "POST",
     body: JSON.stringify(completeSchedule),
   });
+  fetchSchedule();
 });
 
 document.getElementById("discard").addEventListener("click", fetchSchedule);
@@ -335,11 +343,17 @@ function fetchSchedule() {
     .then((data) => {
       const scheduleLists = document.getElementsByClassName("scheduleList");
       for (const [day, newScheduleList] of Object.entries(data)) {
-        console.log(day, newScheduleList)
+        console.log(day, newScheduleList);
         const index = parseInt(day) - 1;
         scheduleLists[index].innerHTML = "";
         for (const schedule of newScheduleList) {
-          scheduleLists[index].appendChild(createScheduleLine(timeToString(schedule.start_time), timeToString(schedule.end_time), schedule.temperature));
+          scheduleLists[index].appendChild(
+            createScheduleLine(
+              timeToString(schedule.start_time),
+              timeToString(schedule.end_time),
+              schedule.temperature
+            )
+          );
         }
         for (let i = newScheduleList.length; i < 3; i++) {
           scheduleLists[index].appendChild(createScheduleLine());
@@ -351,5 +365,7 @@ function fetchSchedule() {
 fetchSchedule();
 
 function timeToString(time) {
-  return `${time[0].toString().padStart(2, "0")}:${time[1].toString().padStart(2, "0")}`;
+  return `${time[0].toString().padStart(2, "0")}:${time[1]
+    .toString()
+    .padStart(2, "0")}`;
 }

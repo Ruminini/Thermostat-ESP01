@@ -286,7 +286,7 @@ bool validateSchedule(JsonArray schedule) {
       return false;
     if (!validateTime(item["start_time"]) || !validateTime(item["end_time"]))
       return false;
-    if (compareTime(item["start_time"], item["end_time"]) != -1)
+    if (compareTime(item["start_time"], item["end_time"]) == 1)
       return false;
     if (prevItem) {
       if (compareTime(prevItem["end_time"], item["start_time"]) == 1)
@@ -340,6 +340,6 @@ int compareTimeRange(tm *now, JsonDocument range) {
 void handleGetSchedule(AsyncWebServerRequest *request) {
   Serial.println("GET Schedule");
   String response;
-  serializeJson(schedule,response);
+  serializeJson(schedule, response);
   request->send(200, "text/json", response);
 }

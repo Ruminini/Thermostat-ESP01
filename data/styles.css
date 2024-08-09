@@ -52,7 +52,7 @@ body {
 }
 
 .selected {
-  background: white
+  background: white;
 }
 
 .tempSelector {
@@ -145,7 +145,10 @@ button {
   border-radius: 10px;
 }
 
-button:active,button.selected,#save:active,.button:active {
+button:active,
+button.selected,
+#save:active,
+.button:active {
   background: linear-gradient(145deg, #d8d8d8, #ffffff);
 }
 
