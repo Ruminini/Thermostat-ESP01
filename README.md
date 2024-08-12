@@ -21,9 +21,15 @@ A simple and cheap thermostat controlled by an esp8266 with a web interface.
 
 ## Assembly
 
-Follow the schematic to assemble the thermostat.
+Follow the schematic to assemble and program the thermostat.
 
-![schematic](assets/schematic.png)
+![schematic](assets/schematic.webp)
+
+After flashing, the following are not needed:
+* the button and the 2 cables connected to it (black and gray).
+* the green and blue wires.
+* the red wire between blue and gray.
+* the arduino Uno but a replacement for 5v and 3v3 power is needed.
 
 ## Configure
 
@@ -36,26 +42,32 @@ Follow the schematic to assemble the thermostat.
 
 ## Flashing
 
-To flash the code, inside platformio:
-* Go to **Project Tasks** -> **ESP-01** -> **General** and **Upload**
-the code
+> [!IMPORTANT]
+> When flashing, the Yellow cable should be connected to GND instead of the data pin of the DHT sensor and a push of the button is needed for the esp to enter the bootloader.
+
+Then, inside platformio:
+* Go to **Project Tasks** -> **ESP-01** -> **General** and **Upload** the code
 * Go to **Project Tasks** -> **ESP-01** -> **Platform** and upload the **Filesystem Image**.
 
 ## Usage
+By using the web interface, select a mode.
+* In **fixed** mode, select **OFF**, **ON** or a **custom** target temperature. 
+* In **schedule** mode, select **single**, **weekly** or **daily** depending on how custom schedules are configured.
+  * **Single:** you set one schedule that will be repeated every day.
+  * **Weekly:** allows you to have distinct schedules for weekdays and weekends.
+  * **Daily:** offers a custom schedule for every day of the week.
 
-**Usage:**
-* Access the thermostat's web interface to adjust settings.
-* Temperature and humidity readings are displayed.
-* Heating can be turned on/off manually.
+> [!NOTE]
+> each schedule consists of a list of start times, end times and target temperatures.
 
-**Contributing:**
+## Contributing
 Contributions are welcome! Please open an issue or pull request.
 
 ## TODO
-* Add schematic.
-* Persist schedule on power loss.
-* Add more config options to web interface.
-* Create AP when no Wi-Fi SSID and password are provided connection fails or button press on boot.
-* Improve file configuration.
-* Improve README.md
-* Go back to EspWebServer instead of ESPAsyncWebServer for lower memory usage.
+- [x] ~~Add schematic.~~
+- [ ] Persist schedule on power loss.
+- [ ] Add more config options to web interface.
+- [ ] Create AP when no Wi-Fi SSID and password are provided connection fails or button press on boot.
+- [ ] Improve file configuration.
+- [ ] Improve README.md
+- [ ] Go back to EspWebServer instead of ESPAsyncWebServer for lower memory usage.
