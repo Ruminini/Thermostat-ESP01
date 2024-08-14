@@ -36,6 +36,14 @@ function updateSet(temp) {
   custom.value = temp;
 }
 
+function updateCustomTemp(temp) {
+  if (temp < 15 || temp > 30) return;
+  const custom = document
+    .getElementById("fixedConfig")
+    .getElementsByClassName("tempInput")[0];
+  custom.value = temp;
+}
+
 function updateForce(forceState) {
   const innerArc = document.getElementById("innerArc");
   const setTemp = document.getElementById("setTemp");
@@ -56,6 +64,7 @@ function fetchData() {
     .then((data) => {
       updateNow(data.temperature);
       updateSet(data.targetTemp);
+      updateCustomTemp(data.targetTemp);
       updateForce(data.forceState);
       burner.setAttribute("fill", data.relay == 1 ? "red" : "#ccc");
       humidity.textContent = data.humidity;
@@ -65,7 +74,7 @@ function fetchData() {
 setInterval(fetchData, 2500);
 fetchData();
 
-const fixedTempSelector = newTempSelector();
+const fixedTempSelector = newTempSelector(25);
 const fixedTempInput = fixedTempSelector.getElementsByClassName("tempInput")[0];
 document.getElementById("fixedConfig").appendChild(fixedTempSelector);
 fixedTempSelector
@@ -303,8 +312,6 @@ document.getElementById("daily").addEventListener("click", () => {
 });
 
 function invalidTime(first, last) {
-  console.log(first, last);
-  console.log(isNaN(first[0]), isNaN(last[0]));
   return (
     first[0] > last[0] ||
     (first[0] == last[0] && first[1] > last[1]) ||
@@ -325,6 +332,7 @@ function parseScheduleList(scheduleList) {
       .getElementsByClassName("end")[0]
       .value.split(":")
       .map((x) => parseInt(x));
+    if (end[0] == 0 && end[1] == 0) end = [24, 0];
     const temp = parseInt(line.getElementsByClassName("tempInput")[0].value);
     if (isNaN(start[0]) && isNaN(end[0]) && isNaN(temp)) {
       continue;
