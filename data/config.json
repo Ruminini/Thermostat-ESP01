@@ -1,0 +1,6 @@
+{
+    "schedule": null,    
+    "hysteresis": 1,
+    "updateInterval": 15000,
+    "forceState": -1
+}

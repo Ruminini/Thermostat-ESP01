@@ -15,6 +15,10 @@ float tem;
 float hum;
 unsigned long int lastRead;
 JsonDocument schedule;
+uint hysteresis;
+uint updateInterval;
+int forceState;
+bool configChanged = false;
 
 AsyncWebServer server(80);
 
@@ -37,6 +41,7 @@ int compareTime(int hour1, int minute1, int hour2, int minute2);
 int compareTime(JsonArray time1, JsonArray time2);
 int compareTimeRange(tm *now, JsonDocument range);
 void updateTargetTemp();
+void saveConfig();
 
 void setup() {
   Serial.begin(115200);
@@ -44,6 +49,15 @@ void setup() {
   if (!LittleFS.begin()) {
     Serial.println("An Error has occurred while mounting LittleFS");
   }
+  JsonDocument config;
+  File configFile = LittleFS.open("/config.json", "r");
+  deserializeJson(config, configFile);
+  configFile.close();
+  schedule = config["schedule"];
+  hysteresis = config["hysteresis"];
+  updateInterval = config["updateInterval"];
+  forceState = config["forceState"];
+
   configTime(-3 * 3600, 0, "ntp.inti.gob.ar", "pool.ntp.org");
   pinMode(RELAYPIN, OUTPUT);
   digitalWrite(RELAYPIN, 1);
@@ -85,6 +99,7 @@ void setup() {
 void loop() {
   readDht();
   regulateTemp();
+  saveConfig();
 }
 
 unsigned int readSleep = 2500;
@@ -103,9 +118,6 @@ void readDht() {
 
 unsigned long lastUpdate;
 unsigned int targetTemp = 20;
-unsigned int hysteresis = 1;
-unsigned int updatePeriod = 15000;
-int forceState = -1;
 void regulateTemp() {
   int newState = 1 - digitalRead(RELAYPIN);
   if (forceState > 1) {
@@ -121,7 +133,7 @@ void regulateTemp() {
   }
   if (newState == 1 - digitalRead(RELAYPIN))
     return;
-  if (newState == 1 && millis() - lastUpdate < updatePeriod)
+  if (newState == 1 && millis() - lastUpdate < updateInterval)
     return;
   lastUpdate = millis();
   digitalWrite(RELAYPIN, 1 - newState);
@@ -170,7 +182,7 @@ void handleData(AsyncWebServerRequest *request) {
                 " , \"forceState\":" + String(forceState) +
                 " , \"targetTemp\":" + String(targetTemp) +
                 " , \"hysteresis\":" + String(hysteresis) +
-                " , \"updatePeriod\":" + String(updatePeriod) +
+                " , \"updateInterval\":" + String(updateInterval) +
                 "}";
   request->send(200, "application/json", json);
 }
@@ -198,16 +210,17 @@ void handleSet(AsyncWebServerRequest *request) {
     } else
       error += "Hysteresis must be between 0 and 10\n";
   }
-  if (request->hasArg("updatePeriod")) {
-    int nUpdatePeriod = request->arg("updatePeriod").toInt();
-    if (nUpdatePeriod >= 1000 && nUpdatePeriod <= 600000) {
-      updatePeriod = nUpdatePeriod;
-      ok += "Update period changed to " + String(updatePeriod) + "\n";
+  if (request->hasArg("updateInterval")) {
+    int nUpdateInterval = request->arg("updateInterval").toInt();
+    if (nUpdateInterval >= 1000 && nUpdateInterval <= 600000) {
+      updateInterval = nUpdateInterval;
+      ok += "Update period changed to " + String(updateInterval) + "\n";
     } else
       error += "Update period must be between 1000 and 600000\n";
   }
 
   if (error == "") {
+    configChanged = true;
     request->send(200, "text/json", "{\"success\":true, \"message\":\"" + ok + "\"}");
   } else
     request->send(400, "text/plain", error);
@@ -275,6 +288,7 @@ void handleSchedule(AsyncWebServerRequest *request, uint8_t *data, size_t len, s
     }
     request->send(200, "text/json", "{\"success\":true}");
   }
+  configChanged = true;
 }
 
 bool validateSchedule(JsonArray schedule) {
@@ -342,4 +356,21 @@ void handleGetSchedule(AsyncWebServerRequest *request) {
   String response;
   serializeJson(schedule, response);
   request->send(200, "text/json", response);
+}
+
+ulong lastSaveTime;
+void saveConfig() {
+  if (!configChanged || millis() - lastSaveTime < 60000)
+    return;
+  configChanged = false;
+  lastSaveTime = millis();
+  JsonDocument config;
+  config["schedule"] = schedule;
+  config["hysteresis"] = hysteresis;
+  config["updateInterval"] = updateInterval;
+  config["forceState"] = forceState;
+  File configFile = LittleFS.open("/config.json", "w");
+  serializeJson(config, configFile);
+  configFile.close();
+  Serial.println("Saved config");
 }

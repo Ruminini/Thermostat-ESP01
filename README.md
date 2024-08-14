@@ -43,11 +43,18 @@ After flashing, the following are not needed:
 ## Flashing
 
 > [!IMPORTANT]
-> When flashing, the Yellow cable should be connected to GND instead of the data pin of the DHT sensor and a push of the button is needed for the esp to enter the bootloader.
+> When flashing, the Yellow cable should be connected to GND instead of the data pin of the DHT sensor.  
+> A push of the button is needed for the esp to enter the bootloader (If it stays "Connecting....._____" push it again).
 
-Then, inside platformio:
+Inside platformio:
 * Go to **Project Tasks** -> **ESP-01** -> **General** and **Upload** the code
 * Go to **Project Tasks** -> **ESP-01** -> **Platform** and upload the **Filesystem Image**.
+
+After uploading the fileSystem image, an error might appear.
+
+> A fatal error occurred: Timed out waiting for packet header
+
+If it does, ignore it.
 
 ## Usage
 By using the web interface, select a mode.
@@ -65,7 +72,7 @@ Contributions are welcome! Please open an issue or pull request.
 
 ## TODO
 - [x] ~~Add schematic.~~
-- [ ] Persist schedule on power loss.
+- [x] ~~Persist schedule on power loss.~~
 - [ ] Add more config options to web interface.
 - [ ] Create AP when no Wi-Fi SSID and password are provided connection fails or button press on boot.
 - [ ] Improve file configuration.
