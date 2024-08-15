@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP-01 Thermostat</title>
+    <link rel="stylesheet" href="config.css">
+    <link rel="icon" href="icon.svg">
+    <!-- <script defer src="script.js"></script> -->
+</head>
+
+<body>
+    <form>
+        <section>
+            <div title="Name of your wifi network">
+                <label for="wifi_ssid">wifi ssid</label>
+                <input type="text" name="wifi_ssid" id="wifi_ssid">
+            </div>
+            <div title="Password of your wifi network">
+                <label for="wifi_pwd">wifi password</label>
+                <input type="password" name="wifi_pwd" id="wifi_pwd">
+            </div>
+            <div title="Ask the router for an IP or use the selected one">
+                <label for="dhcp">dhcp</label>
+                <input type="checkbox" name="dhcp" id="dhcp">
+            </div>
+            <div title="What ip to use, usually starts with 192.168">
+                <label for="local_ip">local ip</label>
+                <input type="text" name="local_ip" id="local_ip" minlength="7" maxlength="15" size="15"
+                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+            </div>
+            <div title="What gateway to use, usually starts with 192.168">
+                <label for="gateway">gateway</label>
+                <input type="text" name="gateway" id="gateway" minlength="7" maxlength="15" size="15"
+                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+            </div>
+            <div title="What subnet mask to use, usually 255.255.255.0">
+                <label for="subnet">subnet</label>
+                <input type="text" name="subnet" id="subnet" minlength="7" maxlength="15" size="15"
+                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+            </div>
+            <div>
+                <label for="primary_dns">primary dns</label>
+                <input type="text" name="primary_dns" id="primary_dns" minlength="7" maxlength="15" size="15"
+                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+            </div>
+            <div>
+                <label for="secondary_dns">secondary dns</label>
+                <input type="text" name="secondary_dns" id="secondary_dns" minlength="7" maxlength="15" size="15"
+                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+            </div>
+        </section>
+
+        <section>
+            <div>
+                <label for="ntp_server1">ntp server1</label>
+                <input type="url" name="ntp_server1" id="ntp_server1">
+            </div>
+            <div>
+                <label for="ntp_server2">ntp server2</label>
+                <input type="url" name="ntp_server2" id="ntp_server2">
+            </div>
+            <div>
+                <label for="ntp_timezone">ntp timezone</label>
+                <select id="timezones" value="0" name="ntp_timezone" id="ntp_timezone"></select>
+            </div>
+            <div title="What daylight savings time correction to apply">
+                <label for="ntp_daylight">ntp daylight</label>
+                <input type="text" name="ntp_daylight" id="ntp_daylight" size="1" pattern="^(0|1)$">
+            </div>
+        </section>
+        <section>
+            <div title="What pin of the ESP the relay is connected to">
+                <label for="relay_pin">relay pin</label>
+                <select class="autofillRange" min="0" max="5" value="2" name="relay_pin" id="relay_pin"></select>
+            </div>
+            <div title="What pin of the ESP the sensor is connected to">
+                <label for="sensor_pin">sensor pin</label>
+                <select class="autofillRange" min="0" max="5" value="3" name="sensor_pin" id="sensor_pin"></select>
+            </div>
+            <div title="What type of sensor to use">
+                <label for="sensor_type">sensor type</label>
+                <select id="sensors" name="sensor_type" id="sensor_type"></select>
+            </div>
+            <div title="How often to read the sensor">
+                <label for="sensor_read_interval">sensor read interval</label>
+                <input type="number" min="2000" max="3600000" name="sensor_read_interval" id="sensor_read_interval">
+            </div>
+            <div title="How often to save the config to non-volatile memory">
+                <label for="config_save_interval">config save interval</label>
+                <input type="number" min="1000" max="3600000" name="config_save_interval" id="config_save_interval">
+            </div>
+        </section>
+        <section>
+            <div title="Degrees of temperature to oscillate around the target temperature">
+                <label for="hysteresis">hysteresis</label>
+                <select class="autofillRange" min="0" max="5" name="hysteresis" id="hysteresis"></select>
+            </div>
+            <div title="How long to wait before turning on the relay after the last shutdown">
+                <label for="update_interval">update interval</label>
+                <input type="number" min="15000" max="3600000" name="update_interval" id="update_interval">
+            </div>
+        </section>
+    </form>
+</body>
+<script>
+    for (const autofillRange of document.getElementsByClassName("autofillRange")) {
+        for (let i = autofillRange.getAttribute("min"); i <= autofillRange.getAttribute("max"); i++) {
+            const option = document.createElement("option");
+            option.value = i.toString();
+            option.text = i.toString();
+            option.selected = (i == autofillRange.getAttribute("value"));
+            autofillRange.appendChild(option);
+        }
+    }
+    function autofillFromObject(target, object) {
+        for (const [k, v] of Object.entries(object)) {
+            console.log(k, v);
+            const option = document.createElement("option");
+            option.text = k;
+            option.value = v;
+            option.selected = (v == target.getAttribute("value"));
+            target.appendChild(option);
+        }
+    }
+    const timezoneList = {"-12:00":"-12","-11:00":"-11","-10:00":"-10","-09:30":"-9.5","-09:00":"-9","-08:00":"-8","-07:00":"-7","-06:00":"-6","-05:00":"-5","-04:00":"-4","-03:30":"-3.5","-03:00":"-3","-02:00":"-2","-01:00":"-1","00:00":"0","+01:00":"1","+02:00":"2","+03:00":"3","+03:30":"3.5","+04:00":"4","+04:30":"4.5","+05:00":"5","+05:30":"5.5","+05:45":"5.75","+06:00":"6","+06:30":"6.5","+07:00":"7","+08:00":"8","+08:45":"8.75","+09:00":"9","+09:30":"9.5","+10:00":"10","+10:30":"10.5","+11:00":"11","+12:00":"12","+12:45":"12.75","+13:00":"13","+14:00":"14"}
+    const timezones = document.getElementById("timezones");
+    autofillFromObject(timezones, timezoneList);
+    const sensorList = {"DHT11": "DHT11", "DHT21": "DHT21", "DHT22": "DHT22", "AM2301": "DHT21", "AM2302": "DHT22", "AM2321": "DHT22"};
+    const sensors = document.getElementById("sensors");
+    autofillFromObject(sensors, sensorList);
+</script>
+
+</html>

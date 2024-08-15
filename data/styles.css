@@ -11,6 +11,8 @@ html {
   box-sizing: border-box;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  font-family: Arial, sans-serif;
+  color: #777;
 }
 
 body {
@@ -20,8 +22,6 @@ body {
   align-items: center;
   /* height: 100vh; */
   background-color: #f0f0f0;
-  color: #777;
-  font-family: Arial, sans-serif;
   max-width: 1200px;
 }
 
@@ -94,7 +94,6 @@ body {
   font-size: 12pt;
   width: 70px;
   margin-left: 15px;
-  color: #777;
 }
 
 section {
@@ -121,8 +120,6 @@ section {
   outline: none;
   font-size: 11pt;
   width: 7em;
-  font-family: Arial, sans-serif;
-  color: #777;
   border-radius: 10px;
   display: flex;
   justify-content: center;
@@ -139,9 +136,7 @@ button {
   background-color: transparent;
   border: none;
   cursor: pointer;
-  font-family: Arial, sans-serif;
   font-size: 12pt;
-  color: #777;
   border-radius: 10px;
 }
 
