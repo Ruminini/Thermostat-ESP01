@@ -10,7 +10,7 @@
 </head>
 
 <body>
-    <form id="config" action="/config" method="post">
+    <form id="config">
         <fieldset id="wifiFields">
             <div title="Name of your wifi network">
                 <label for="wifi_ssid">wifi ssid</label>
@@ -31,18 +31,18 @@
             </div>
             <div title="What ip to use, usually starts with 192.168">
                 <label for="local_ip">local ip</label>
-                <input type="text" name="local_ip" id="local_ip" minlength="7" maxlength="15"
-                    size="15" pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+                <input type="text" name="local_ip" id="local_ip" minlength="7" maxlength="15" size="15"
+                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
             </div>
             <div title="What gateway to use, usually starts with 192.168">
                 <label for="gateway">gateway</label>
-                <input type="text" name="gateway" id="gateway" minlength="7" maxlength="15"
-                    size="15" pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+                <input type="text" name="gateway" id="gateway" minlength="7" maxlength="15" size="15"
+                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
             </div>
             <div title="What subnet mask to use, usually 255.255.255.0">
                 <label for="subnet">subnet</label>
-                <input type="text" name="subnet" id="subnet" minlength="7" maxlength="15"
-                    size="15" pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+                <input type="text" name="subnet" id="subnet" minlength="7" maxlength="15" size="15"
+                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
             </div>
             <div>
                 <label for="primary_dns">primary dns</label>
@@ -100,15 +100,15 @@
                 <label for="hysteresis">hysteresis</label>
                 <select class="autofillRange" min="0" max="5" name="hysteresis" id="hysteresis"></select>
             </div>
-            <div title="How long to wait before turning on the relay after the last shutdown">
+            <div title="How long to wait before turning on the relay after turning it off">
                 <label for="update_interval">update interval</label>
                 <input type="number" min="15000" max="3600000" name="update_interval" id="update_interval">
             </div>
         </fieldset>
-		<div id="buttons">
-			<button id="discard">discard</button>
-			<button id="save" type="submit">save</button>
-		</div>
+        <div id="buttons">
+            <button id="discard">discard</button>
+            <button id="save" type="submit">save</button>
+        </div>
     </form>
 </body>
 <script>
@@ -150,8 +150,11 @@
     document.getElementById("discard").addEventListener("click", () => {
         const config = fetch("/config");
         const configForm = document.getElementById("config");
-        configForm.querySelectorAll("input").forEach((input) => {
-            input.value = config[input.id];
+        configForm.querySelectorAll("input[type!='radio']").forEach((input) => {
+            input.value = config[input.name];
+        })
+        document.querySelectorAll("dhcp").forEach((input) => {
+            input.checked = (config["dhcp"] && input.textContent == "on") || (!config["dhcp"] && input.textContent == "off");
         })
     });
     document.getElementById("save").addEventListener("click", () => {
