@@ -13,6 +13,7 @@ html {
   -webkit-tap-highlight-color: transparent;
   font-family: Arial, sans-serif;
   font-size: 12pt;
+  line-height: 20px;
   color: #777;
 }
 
@@ -23,7 +24,8 @@ body {
   max-width: 1200px;
 }
 
-section {
+fieldset {
+  border: none;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -36,7 +38,8 @@ section {
     gap: 10px;
     width: 100%;
     justify-content: space-between;
-    input, select {
+    input,
+    select {
       outline: none;
       border: none;
       border-radius: 5px;
@@ -46,3 +49,63 @@ section {
     }
   }
 }
+
+aside:has(input[type="radio"]) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 20px;
+}
+
+input[type="radio"] {
+  display: none;
+}
+
+input[type="radio"] + span {
+  display: flex;
+  padding: 0 5px;
+  height: 20px;
+  border-radius: 5px;
+  background: linear-gradient(145deg, #ffffff, #d8d8d8);
+}
+
+input[type="radio"]:checked + span {
+  font-size: 11pt;
+  background: linear-gradient(145deg, #d8d8d8, #ffffff);
+}
+
+label:has(+ input:disabled) {
+  color: #ccc;
+}
+
+input:disabled {
+  box-shadow: none;
+  background-color: #d8d8d8;
+  color: #ccc;
+}
+
+#buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  margin: auto;
+  width: fit-content;
+  padding: 5px;
+  border-radius: 10px;
+  box-shadow: 5px 5px 10px #ccc, -5px -5px 10px #fff;
+}
+button {
+  border: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+button[type="submit"] {
+  background: linear-gradient(145deg, #ffffff, #d8d8d8);
+}
+
+button:active {
+  background: linear-gradient(145deg, #d8d8d8, #ffffff);
+}
+

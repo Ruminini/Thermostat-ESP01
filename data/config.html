@@ -7,12 +7,11 @@
     <title>ESP-01 Thermostat</title>
     <link rel="stylesheet" href="config.css">
     <link rel="icon" href="icon.svg">
-    <!-- <script defer src="script.js"></script> -->
 </head>
 
 <body>
-    <form>
-        <section>
+    <form id="config" action="/config" method="post">
+        <fieldset id="wifiFields">
             <div title="Name of your wifi network">
                 <label for="wifi_ssid">wifi ssid</label>
                 <input type="text" name="wifi_ssid" id="wifi_ssid">
@@ -21,24 +20,29 @@
                 <label for="wifi_pwd">wifi password</label>
                 <input type="password" name="wifi_pwd" id="wifi_pwd">
             </div>
+        </fieldset>
+        <fieldset id="dhcp">
             <div title="Ask the router for an IP or use the selected one">
                 <label for="dhcp">dhcp</label>
-                <input type="checkbox" name="dhcp" id="dhcp">
+                <aside>
+                    <label><input type="radio" name="dhcp" value="off" checked /><span>off</span></label>
+                    <label><input type="radio" name="dhcp" value="on" /><span>on</span></label>
+                </aside>
             </div>
             <div title="What ip to use, usually starts with 192.168">
                 <label for="local_ip">local ip</label>
-                <input type="text" name="local_ip" id="local_ip" minlength="7" maxlength="15" size="15"
-                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+                <input type="text" name="local_ip" id="local_ip" minlength="7" maxlength="15"
+                    size="15" pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
             </div>
             <div title="What gateway to use, usually starts with 192.168">
                 <label for="gateway">gateway</label>
-                <input type="text" name="gateway" id="gateway" minlength="7" maxlength="15" size="15"
-                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+                <input type="text" name="gateway" id="gateway" minlength="7" maxlength="15"
+                    size="15" pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
             </div>
             <div title="What subnet mask to use, usually 255.255.255.0">
                 <label for="subnet">subnet</label>
-                <input type="text" name="subnet" id="subnet" minlength="7" maxlength="15" size="15"
-                    pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
+                <input type="text" name="subnet" id="subnet" minlength="7" maxlength="15"
+                    size="15" pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
             </div>
             <div>
                 <label for="primary_dns">primary dns</label>
@@ -50,9 +54,8 @@
                 <input type="text" name="secondary_dns" id="secondary_dns" minlength="7" maxlength="15" size="15"
                     pattern="^(?>(\d|[1-9]\d{2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(?1)$">
             </div>
-        </section>
-
-        <section>
+        </fieldset>
+        <fieldset id="ntpFields">
             <div>
                 <label for="ntp_server1">ntp server1</label>
                 <input type="url" name="ntp_server1" id="ntp_server1">
@@ -69,8 +72,8 @@
                 <label for="ntp_daylight">ntp daylight</label>
                 <input type="text" name="ntp_daylight" id="ntp_daylight" size="1" pattern="^(0|1)$">
             </div>
-        </section>
-        <section>
+        </fieldset>
+        <fieldset id="sensorFields">
             <div title="What pin of the ESP the relay is connected to">
                 <label for="relay_pin">relay pin</label>
                 <select class="autofillRange" min="0" max="5" value="2" name="relay_pin" id="relay_pin"></select>
@@ -91,8 +94,8 @@
                 <label for="config_save_interval">config save interval</label>
                 <input type="number" min="1000" max="3600000" name="config_save_interval" id="config_save_interval">
             </div>
-        </section>
-        <section>
+        </fieldset>
+        <fieldset id="relayFields">
             <div title="Degrees of temperature to oscillate around the target temperature">
                 <label for="hysteresis">hysteresis</label>
                 <select class="autofillRange" min="0" max="5" name="hysteresis" id="hysteresis"></select>
@@ -101,7 +104,11 @@
                 <label for="update_interval">update interval</label>
                 <input type="number" min="15000" max="3600000" name="update_interval" id="update_interval">
             </div>
-        </section>
+        </fieldset>
+		<div id="buttons">
+			<button id="discard">discard</button>
+			<button id="save" type="submit">save</button>
+		</div>
     </form>
 </body>
 <script>
@@ -124,12 +131,32 @@
             target.appendChild(option);
         }
     }
-    const timezoneList = {"-12:00":"-12","-11:00":"-11","-10:00":"-10","-09:30":"-9.5","-09:00":"-9","-08:00":"-8","-07:00":"-7","-06:00":"-6","-05:00":"-5","-04:00":"-4","-03:30":"-3.5","-03:00":"-3","-02:00":"-2","-01:00":"-1","00:00":"0","+01:00":"1","+02:00":"2","+03:00":"3","+03:30":"3.5","+04:00":"4","+04:30":"4.5","+05:00":"5","+05:30":"5.5","+05:45":"5.75","+06:00":"6","+06:30":"6.5","+07:00":"7","+08:00":"8","+08:45":"8.75","+09:00":"9","+09:30":"9.5","+10:00":"10","+10:30":"10.5","+11:00":"11","+12:00":"12","+12:45":"12.75","+13:00":"13","+14:00":"14"}
+    const timezoneList = { "-12:00": "-12", "-11:00": "-11", "-10:00": "-10", "-09:30": "-9.5", "-09:00": "-9", "-08:00": "-8", "-07:00": "-7", "-06:00": "-6", "-05:00": "-5", "-04:00": "-4", "-03:30": "-3.5", "-03:00": "-3", "-02:00": "-2", "-01:00": "-1", "00:00": "0", "+01:00": "1", "+02:00": "2", "+03:00": "3", "+03:30": "3.5", "+04:00": "4", "+04:30": "4.5", "+05:00": "5", "+05:30": "5.5", "+05:45": "5.75", "+06:00": "6", "+06:30": "6.5", "+07:00": "7", "+08:00": "8", "+08:45": "8.75", "+09:00": "9", "+09:30": "9.5", "+10:00": "10", "+10:30": "10.5", "+11:00": "11", "+12:00": "12", "+12:45": "12.75", "+13:00": "13", "+14:00": "14" }
+    const sensorList = { "DHT11": "DHT11", "DHT21": "DHT21", "DHT22": "DHT22", "AM2301": "DHT21", "AM2302": "DHT22", "AM2321": "DHT22" };
     const timezones = document.getElementById("timezones");
-    autofillFromObject(timezones, timezoneList);
-    const sensorList = {"DHT11": "DHT11", "DHT21": "DHT21", "DHT22": "DHT22", "AM2301": "DHT21", "AM2302": "DHT22", "AM2321": "DHT22"};
     const sensors = document.getElementById("sensors");
+    autofillFromObject(timezones, timezoneList);
     autofillFromObject(sensors, sensorList);
+
+    function toggleWithDhcp(event) {
+        const toggle = event.target.value == "on";
+        document.getElementById("dhcp").querySelectorAll("input[type='text']").forEach((input) => {
+            input.disabled = toggle;
+        });
+    }
+    document.querySelectorAll("input[name='dhcp']").forEach((input) => {
+        input.addEventListener('change', toggleWithDhcp);
+    });
+    document.getElementById("discard").addEventListener("click", () => {
+        const config = fetch("/config");
+        const configForm = document.getElementById("config");
+        configForm.querySelectorAll("input").forEach((input) => {
+            input.value = config[input.id];
+        })
+    });
+    document.getElementById("save").addEventListener("click", () => {
+        document.getElementById("configForm").submit();
+    });
 </script>
 
 </html>
