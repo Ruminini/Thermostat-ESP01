@@ -36,24 +36,23 @@ void updateTargetTemp();
 void saveConfig();
 void handleSetupConfig(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total);
 void handleGetSetupConfig(AsyncWebServerRequest *request);
-bool collectJson(JsonDocument json, AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total);
+bool collectJson(JsonDocument *json, AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total);
 
 void setupWifi(JsonDocument config) {
   WiFi.hostname("ESP-Thermostat");
   String ssid = config["wifi_ssid"].as<String>();
   String pwd = config["wifi_pwd"].as<String>();
   IPAddress local_IP, gateway, subnet, primaryDNS, secondaryDNS;
-  if (!config["dhcp"]) {
+  if (!config["dhcp"].as<bool>()) {
     local_IP.fromString(config["local_ip"].as<String>());
     gateway.fromString(config["gateway"].as<String>());
     subnet.fromString(config["subnet"].as<String>());
-    if (config.containsKey("primary_dns") && config.containsKey("secondary_dns")) {
+    if (config.containsKey("primary_dns"))
       primaryDNS.fromString(config["primary_dns"].as<String>());
+    if (config.containsKey("secondary_dns"))
       secondaryDNS.fromString(config["secondary_dns"].as<String>());
-    }
-    if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+    if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS))
       Serial.println("STA Failed to configure");
-    }
   }
 
   Serial.print("Connecting to ");
@@ -97,6 +96,7 @@ void setup() {
   JsonDocument config;
   File configFile = LittleFS.open("/config.json", "r");
   deserializeJson(config, configFile);
+  serializeJsonPretty(config, Serial);
   configFile.close();
   schedule = config["schedule"];
   hysteresis = config["hysteresis"];
@@ -106,6 +106,7 @@ void setup() {
   JsonDocument setupConfig;
   File setupConfigFile = LittleFS.open("/setupConfig.json", "r");
   deserializeJson(setupConfig, setupConfigFile);
+  serializeJsonPretty(setupConfig, Serial);
   configFile.close();
 
   setupWifi(setupConfig);
@@ -210,16 +211,17 @@ void handleRoot(AsyncWebServerRequest *request) {
 
 void handleData(AsyncWebServerRequest *request) {
   Serial.println("GET Data");
-  int relay = 1 - digitalRead(relay_pin);
-  String json = "{\"temperature\":" + String(tem) +
-                " , \"humidity\":" + String(hum) +
-                " , \"relay\":" + String(relay) +
-                " , \"forceState\":" + String(forceState) +
-                " , \"targetTemp\":" + String(targetTemp) +
-                " , \"hysteresis\":" + String(hysteresis) +
-                " , \"updateInterval\":" + String(updateInterval) +
-                "}";
-  request->send(200, "application/json", json);
+  JsonDocument json;
+  json["temperature"] = tem;
+  json["humidity"] = hum;
+  json["relay"] = 1 - digitalRead(relay_pin);;
+  json["forceState"] = forceState;
+  json["targetTemp"] = targetTemp;
+  json["hysteresis"] = hysteresis;
+  json["updateInterval"] = updateInterval;
+  String response;
+  serializeJson(json, response);
+  request->send(200, "application/json", response);
 }
 
 void handleSet(AsyncWebServerRequest *request) {
@@ -263,7 +265,7 @@ void handleSet(AsyncWebServerRequest *request) {
 
 void handleSchedule(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
   JsonDocument json;
-  if (!collectJson(json, request, data, len, index, total))
+  if (!collectJson(&json, request, data, len, index, total))
     return;
 
   // Example: {"schedule": [{"start_time": [0, 0], "end_time": [8, 0], "temperature": 20},{"start_time": [8, 0], "end_time": [16, 0], "temperature": 25},{"start_time": [16, 0], "end_time": [23,59], "temperature": 20}]}
@@ -401,21 +403,28 @@ void saveConfig() {
 }
 
 void handleGetSetupConfig(AsyncWebServerRequest *request) {
-  request->send(LittleFS, "/setupConfig.json", "text/json");
+  Serial.println("GET SetupConfig");
+  request->send(LittleFS, "/setupConfig.json", "application/json");
 }
 
 void handleSetupConfig(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+  Serial.println("POST SetupConfig");
+  int args = request->args();
+  for(int i=0;i<args;i++){
+    Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
+  }
   JsonDocument json;
-  if (!collectJson(json, request, data, len, index, total))
+  if (!collectJson(&json, request, data, len, index, total))
     return;
+  serializeJson(json, Serial);
   JsonDocument parsedJson;
   if (json.containsKey("wifi_ssid")) {
     parsedJson["wifi_ssid"] = json["wifi_ssid"];
     parsedJson["wifi_pwd"] = json["wifi_pwd"];
   }
   if (json.containsKey("dhcp")) {
-    parsedJson["dhcp"] = json["dhcp"].as<bool>();
-    if (json["dhcp"] == false) {
+    parsedJson["dhcp"] = json["dhcp"] == "on";
+    if (json["dhcp"] == "off") {
       parsedJson["local_ip"] = json["local_ip"];
       parsedJson["gateway"] = json["gateway"];
       parsedJson["subnet"] = json["subnet"];
@@ -430,41 +439,50 @@ void handleSetupConfig(AsyncWebServerRequest *request, uint8_t *data, size_t len
     if (json.containsKey("ntp_server2"))
       parsedJson["ntp_server2"] = json["ntp_server2"];
     if (json.containsKey("ntp_timezone")) {
-      parsedJson["ntp_timezone"] = json["ntp_timezone"];
+      parsedJson["ntp_timezone"] = json["ntp_timezone"].as<int>();
       if (json.containsKey("ntp_daylight"))
-        parsedJson["ntp_daylight"] = json["ntp_daylight"];
+        parsedJson["ntp_daylight"] = json["ntp_daylight"].as<int>();
     }
   }
   if (json.containsKey("relay_pin"))
-    parsedJson["relay_pin"] = json["relay_pin"];
+    parsedJson["relay_pin"] = json["relay_pin"].as<int>();
   if (json.containsKey("sensor_pin"))
-    parsedJson["sensor_pin"] = json["sensor_pin"];
+    parsedJson["sensor_pin"] = json["sensor_pin"].as<int>();
   if (json.containsKey("sensor_type"))
     parsedJson["sensor_type"] = json["sensor_type"];
   if (json.containsKey("sensor_read_interval"))
-    parsedJson["sensor_read_interval"] = json["sensor_read_interval"];
+    parsedJson["sensor_read_interval"] = json["sensor_read_interval"].as<int>();
   if (json.containsKey("config_save_interval"))
-    parsedJson["config_save_interval"] = json["config_save_interval"];
+    parsedJson["config_save_interval"] = json["config_save_interval"].as<int>();
 
   if (json.containsKey("hysteresis"))
-    parsedJson["hysteresis"] = json["hysteresis"];
+    parsedJson["hysteresis"] = json["hysteresis"].as<int>();
   if (json.containsKey("update_interval"))
-    parsedJson["update_interval"] = json["update_interval"];
+    parsedJson["update_interval"] = json["update_interval"].as<int>();
 
+  serializeJson(parsedJson, Serial);
   File setupConfig = LittleFS.open("/setupConfig.json", "w");
   serializeJson(parsedJson, setupConfig);
   setupConfig.close();
   request->send(200, "text/json", "{\"success\":true}");
+  delay(1000);
+  ESP.restart();
 }
 
 String partialJson;
-bool collectJson(JsonDocument json, AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+bool collectJson(JsonDocument *json, AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+  Serial.println("Collecting JSON");
   for (size_t i = 0; i < len; i++) {
     partialJson += (char)data[i];
   }
+  Serial.println(partialJson);
+  serializeJson(*json, Serial);
   if (index + len != total)
     return false;
-  DeserializationError error = deserializeJson(json, partialJson);
+  DeserializationError error = deserializeJson(*json, partialJson);
+  Serial.println("Deserialized JSON");
+  Serial.println(partialJson);
+  serializeJson(*json, Serial);
   partialJson = "";
   if (error) {
     request->send(400, "text/json", "{\"success\":false, \"error\":\"Invalid JSON\"}");
