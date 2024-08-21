@@ -73,8 +73,15 @@ Contributions are welcome! Please open an issue or pull request.
 ## TODO
 - [x] ~~Add schematic.~~
 - [x] ~~Persist schedule on power loss.~~
-- [ ] Add more config options to web interface.
+- [x] ~~Add more config options to web interface.~~
+- [ ] Restructure code into separate files.
+- [ ] Backup confing before changing.
+- [ ] Change config without reboot.
+- [ ] Show available newtworks.
+- [ ] Remember multiple networks.
 - [ ] Create AP when no Wi-Fi SSID and password are provided connection fails or button press on boot.
+- [ ] Add data logging.
+- [ ] Show data graph on web interface.
 - [ ] Improve file configuration.
 - [ ] Improve README.md
 - [ ] Go back to EspWebServer instead of ESPAsyncWebServer for lower memory usage.
